@@ -18,13 +18,14 @@ public abstract record Offense();
 
 public record RoundDisruption(IEnumerable<uint256> DisruptedRoundIds, Money Value, RoundDisruptionMethod Method) : Offense
 {
-	public	RoundDisruption(uint256 disruptedRoundId, Money value, RoundDisruptionMethod method)
-		: this(disruptedRoundId.Singleton(), value, method) {}
+	public RoundDisruption(uint256 disruptedRoundId, Money value, RoundDisruptionMethod method)
+		: this(disruptedRoundId.Singleton(), value, method) { }
 }
 public record BackendStabilitySafety(uint256 RoundId) : Offense;
 public record FailedToVerify(uint256 VerifiedInRoundId) : Offense;
 public record Inherited(OutPoint[] Ancestors) : Offense;
 public record Cheating(uint256 RoundId) : Offense;
+public record Unfair(uint256 RoundId) : Offense;
 
 public record Offender(OutPoint OutPoint, DateTimeOffset StartedTime, Offense Offense)
 {
@@ -54,14 +55,17 @@ public record Offender(OutPoint OutPoint, DateTimeOffset StartedTime, Offense Of
 						yield return disruptedRoundId.ToString();
 					}
 					break;
+
 				case BackendStabilitySafety backendStabilitySafety:
 					yield return nameof(BackendStabilitySafety);
 					yield return backendStabilitySafety.RoundId.ToString();
 					break;
+
 				case FailedToVerify fv:
 					yield return nameof(FailedToVerify);
 					yield return fv.VerifiedInRoundId.ToString();
 					break;
+
 				case Inherited inherited:
 					yield return nameof(Inherited);
 					foreach (var ancestor in inherited.Ancestors)
@@ -69,10 +73,17 @@ public record Offender(OutPoint OutPoint, DateTimeOffset StartedTime, Offense Of
 						yield return ancestor.ToString();
 					}
 					break;
+
 				case Cheating cheating:
 					yield return nameof(Cheating);
 					yield return cheating.RoundId.ToString();
 					break;
+
+				case Unfair unfair:
+					yield return nameof(Unfair);
+					yield return unfair.RoundId.ToString();
+					break;
+
 				default:
 					throw new NotImplementedException("Cannot serialize an unknown offense type.");
 			}
@@ -111,7 +122,10 @@ public record Offender(OutPoint OutPoint, DateTimeOffset StartedTime, Offense Of
 				ParseInheritedOffense(),
 			nameof(Cheating) =>
 				new Cheating(uint256.Parse(parts[3])),
-		_ => throw new NotImplementedException("Cannot deserialize an unknown offense type.")
+			nameof(Unfair) =>
+				new Unfair(uint256.Parse(parts[3])),
+
+			_ => throw new NotImplementedException("Cannot deserialize an unknown offense type.")
 		};
 
 		return new Offender(outpoint, startedTime, offense);

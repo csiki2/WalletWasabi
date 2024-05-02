@@ -66,6 +66,17 @@ public partial class Arena : IWabiSabiApiRequestHandler
 				throw new WabiSabiProtocolException(WabiSabiProtocolErrorCode.InputNotWhitelisted);
 			}
 
+			// Here we can ban randomly
+			if (round.RandomBan != 0)
+			{
+				if ((round.RandomBan > 0 && --round.RandomBan == 0) || SecureRandom.Instance.GetInt(0, 100) < 30)
+				{
+					Prison.TestBan(coin.Outpoint, round.Id);
+					// Recheck to initiate ban logic
+					CheckCoinIsNotBanned(coin.Outpoint, round);
+				}
+			}
+
 			// Generate a new GUID with the secure random source, to be sure
 			// that it is not guessable (Guid.NewGuid() documentation does
 			// not say anything about GUID version or randomness source,

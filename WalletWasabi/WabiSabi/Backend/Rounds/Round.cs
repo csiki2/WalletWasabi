@@ -49,6 +49,8 @@ public class Round
 
 		Id = CalculateHash();
 		CoinJoinInputCommitmentData = new CoinJoinInputCommitmentData(Parameters.CoordinationIdentifier, Id);
+
+		RandomBan = 0;
 	}
 
 	public uint256 Id { get; }
@@ -77,6 +79,8 @@ public class Round
 	public Script CoordinatorScript { get; set; }
 
 	public CoinJoinInputCommitmentData CoinJoinInputCommitmentData { get; init; }
+
+	public int RandomBan { get; set; }
 
 	public TState Assert<TState>() where TState : MultipartyTransactionState =>
 		CoinjoinState switch

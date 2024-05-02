@@ -52,6 +52,9 @@ public class Prison
 	public void FailedToSignalReadyToSign(OutPoint outPoint, Money value, uint256 roundId) =>
 		Punish(new Offender(outPoint, DateTimeOffset.UtcNow, new RoundDisruption(roundId, value, RoundDisruptionMethod.DidNotSignalReadyToSign)));
 
+	public void TestBan(OutPoint outPoint, uint256 roundId) =>
+		Punish(new Offender(outPoint, DateTimeOffset.UtcNow, new Unfair(roundId)));
+
 	public bool IsBanned(OutPoint outpoint, DoSConfiguration configuration, DateTimeOffset when) =>
 		GetBanTimePeriod(outpoint, configuration).Includes(when);
 
@@ -80,7 +83,8 @@ public class Prison
 
 			var maxOffense = offenderHistory.Count == 0
 				? 1
-				: offenderHistory.Max( x => x switch {
+				: offenderHistory.Max(x => x switch
+				{
 					{ Method: RoundDisruptionMethod.DidNotConfirm } => configuration.PenaltyFactorForDisruptingConfirmation,
 					{ Method: RoundDisruptionMethod.DidNotSign } => configuration.PenaltyFactorForDisruptingSigning,
 					{ Method: RoundDisruptionMethod.DoubleSpent } => configuration.PenaltyFactorForDisruptingByDoubleSpending,
@@ -128,6 +132,7 @@ public class Prison
 			{ Offense: Cheating } => new TimeFrame(offender.StartedTime, configuration.MinTimeForCheating),
 			{ Offense: RoundDisruption offense } => new TimeFrame(offender.StartedTime, CalculatePunishment(offender, offense)),
 			{ Offense: Inherited { Ancestors: { } ancestors } } => CalculatePunishmentInheritance(ancestors),
+			{ Offense: Unfair } => new TimeFrame(offender.StartedTime, configuration.MinTimeInPrison + TimeSpan.FromMinutes(2)),
 			_ => throw new NotSupportedException("Unknown offense type.")
 		});
 
